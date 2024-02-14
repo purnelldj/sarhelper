@@ -1,0 +1,18 @@
+[flake8]
+max-line-length = 100
+extend-ignore =
+    # E203 is Whitespace before ':'
+    E203,
+    # E501 is Line too long
+    E501,
+    # missing docstrings
+    D100,
+    D101,
+    D102,
+    D103,
+    D104,
+    D105,
+    D107
+exclude =
+    .venv,
+    __pycache__
