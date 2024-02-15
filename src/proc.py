@@ -2,26 +2,28 @@ import hydra
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 
+from datamodules.base import Datamod, Product
+
 
 @hydra.main(config_path="conf", config_name="main", version_base=None)
 def main(cfg: DictConfig):
     # instantiate data class
-    datamod = instantiate(cfg.dataset_inst, cfg.dataset)
+    datamod: Datamod = instantiate(cfg.dataset_inst, cfg.dataset)
 
     # run processing steps
     for file in datamod.filelist:
         print(f"processing file: \n {file}")
 
-        file_data = datamod.read_file(file)
+        prod: Product = datamod.read_file(file)
 
         if cfg.pipeline.subset:
-            datamod.subset(file_data)
+            datamod.subset(prod)
 
         if cfg.pipeline.plot:
-            datamod.plot(file_data)
+            datamod.plot(prod)
 
         if cfg.pipeline.save:
-            datamod.save(file_data)
+            datamod.save(prod)
 
     print(f"finished processing {len(datamod.filelist)} files")
 
