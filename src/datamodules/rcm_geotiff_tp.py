@@ -8,24 +8,24 @@ import rioxarray as rx
 from omegaconf import DictConfig
 
 from datamodules.base import Datamod, Product
-from datamodules.utils import lin_to_db, save_fig
+from datamodules.utils import crs_transform, lin_to_db, save_fig
 
 
 class RCMGeotiffTP(Datamod):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
 
-    def read_file(self, file: str) -> Any:
+    def read_file(self, file: str, to_latlon: bool = True) -> Any:
         prod = Product()
 
-        # first get metadata
+        # get metadata
         metastr = os.path.split(file)[1].split("_")
         dtjoined = metastr[5] + metastr[6]
         prod.datetime = dt.strptime(dtjoined, "%Y%m%d%H%M%S")
         prod.sat = metastr[0]
         prod.mode = metastr[4]
 
-        # now get bands
+        # get bands
         dir = file + "/"
         sublist = os.listdir(dir)
         sublist = [file for file in sublist if file[-4:] == ".tif"]
@@ -39,7 +39,10 @@ class RCMGeotiffTP(Datamod):
             rxt = rxt.squeeze(drop=True)
             if bname == "VV" or bname == "VH":
                 rxt.values = lin_to_db(rxt.values)
+            if to_latlon:
+                rxt = crs_transform(rxt, "EPSG:2960", "EPSG:4326")
             prod.bands[bname] = rxt
+
         return prod
 
     def plot(self, prod: Product) -> None:
@@ -57,14 +60,19 @@ class RCMGeotiffTP(Datamod):
             cbkw = {}
             cbkw["label"] = None
             band.plot.imshow(
-                ax=ax[i], vmin=tscale[0], vmax=tscale[1], cmap="pink", cbar_kwargs=cbkw
+                ax=ax[i],
+                vmin=tscale[0],
+                vmax=tscale[1],
+                cmap="pink",
+                cbar_kwargs=cbkw,
+                origin="upper",
             )
             ax[i].set_title(bname[i])
-        figt = self.outdir + prod.datetime.strftime("%Y%m%d_%H%M%S.png")
+        figt = self.outdir + prod.datetime.strftime(prod.sat + "_%Y%m%d_%H%M%S.png")
         save_fig(figt)
         plt.close()
 
-    def subset(self, data: Any) -> Any:
+    def subset(self, prod: Product) -> Product:
         """
         Something like this.
 

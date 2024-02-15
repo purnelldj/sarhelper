@@ -3,6 +3,29 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pyproj import Transformer
+from xarray import DataArray
+
+
+def crs_transform(xr: DataArray, crs_in: str, crs_out: str) -> DataArray:
+    # first convert x, y to 2D
+    b = xr.values
+    xar = xr["x"].values
+    yar = xr["y"].values
+    attrs = xr.attrs
+    x_2d = np.zeros(b.shape)
+    y_2d = np.zeros(b.shape)
+    for i in range(x_2d.shape[0]):
+        x_2d[i, :] = xar
+    for j in range(x_2d.shape[1]):
+        y_2d[:, j] = yar
+    transformer = Transformer.from_crs(crs_in, crs_out)
+    lat, lon = transformer.transform(x_2d, y_2d)
+    newcoords = {}
+    newcoords["lat"] = (["y", "x"], lat)
+    newcoords["lon"] = (["y", "x"], lon)
+    xr_new = DataArray(b, dims=["y", "x"], coords=newcoords, attrs=attrs)
+    return xr_new
 
 
 def lin_to_db(pixelData):
