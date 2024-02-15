@@ -1,0 +1,21 @@
+defaults:
+  - _self_
+  - dataset: rcm_geotiff_tp
+
+pipeline:
+  subset: False
+  plot: True
+  save: False
+
+dataset:
+  dir:
+  files:
+  ext: ""
+  aoi:
+  cwd: ${hydra:runtime.cwd}
+  datasets_path: ${cwd}/datasets/
+  dataset_name: ${hydra:runtime.choices.dataset}
+  outdir: ${cwd}/outputs/${dataset_name}/
+
+dataset_inst:
+  _target_: ${dataset.module}
