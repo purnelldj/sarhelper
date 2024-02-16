@@ -33,12 +33,15 @@ class RCMGeotiffTP(Datamod):
             full_file = dir + file
             filemeta = file.split("_")
             bname = filemeta[6]
-            # prod.band_names.append(bname)
             rxt = rx.open_rasterio(full_file)
             rxt.values[rxt.values == 0] = np.nan
             rxt = rxt.squeeze(drop=True)
+
+            # convert to db
             if bname == "VV" or bname == "VH":
                 rxt.values = lin_to_db(rxt.values)
+
+            # convert to latlon
             if to_latlon:
                 rxt = crs_transform(rxt, "EPSG:2960", "EPSG:4326")
             prod.bands[bname] = rxt
@@ -56,7 +59,7 @@ class RCMGeotiffTP(Datamod):
         _, ax = plt.subplots(1, blen, figsize=[14, 3])
         for i in range(blen):
             band = prod.bands[bname[i]]
-            tscale = self.cfg.vars[bname[i]].scale
+            tscale = self.lims_for_plotting[bname[i]]
             cbkw = {}
             cbkw["label"] = None
             band.plot.imshow(

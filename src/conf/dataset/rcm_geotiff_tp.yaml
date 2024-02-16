@@ -1,13 +1,7 @@
 module: datamodules.rcm_geotiff_tp.RCMGeotiffTP
-sar: rcm
 dir: ${datasets_path}rcm_geotiff_tp/Subset/
-sdt: 2023-06-01
-edt: 2023-06-10
 aoi:
-vars:
-  VH:
-    scale: [-40, 0]
-  VV:
-    scale: [-40, 0]
-  iae:
-    scale: [18, 60]
+lims_for_plotting:
+  VH: [-40, 0]
+  VV: [-40, 0]
+  iae: [18, 60]

@@ -1,5 +1,3 @@
-from typing import Any
-
 from omegaconf import DictConfig
 
 from datamodules.utils import checkdir, get_filelist
@@ -20,16 +18,21 @@ class Datamod:
         self.aoi = cfg.aoi
         self.outdir = cfg.outdir
         checkdir(self.outdir)
-        self.cfg = cfg
+        self.lims_for_plotting = cfg.lims_for_plotting
+        # self.cfg = cfg
 
-    def read_file(self, file: str) -> Any:
+    def read_file(self, file: str) -> Product:
+        """Read file and return a Product object."""
         pass
 
-    def subset(self, prod: Product) -> Product:
+    def subset(self, prod: Product, aoi: str) -> Product:
+        """Select a subset from an image given some input geometry."""
         pass
 
     def plot(self, prod: Product) -> None:
+        """Plot data."""
         pass
 
     def save(self, prod: Product) -> None:
+        """Save data."""
         pass
