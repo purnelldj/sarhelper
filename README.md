@@ -13,8 +13,10 @@ pre-commit install
 
 ## process some data
 
+For example, using a simple
+
 ```
-proc
+proc subset=True plot=True save=False
 ```
 
 ## add a new dataset
