@@ -13,6 +13,8 @@ dependencies = [
   "pytest==8.0.0",
   "rioxarray==0.15.1",
   "pyproj==3.6.1",
+  "earthengine-api==0.1.391",
+  "geopy==2.4.1"
 ]
 
 [build-system]

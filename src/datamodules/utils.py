@@ -1,9 +1,11 @@
 import glob
 from pathlib import Path
 
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 from pyproj import Transformer
+from shapely.geometry import Polygon
 from xarray import DataArray
 
 
@@ -22,9 +24,9 @@ def crs_transform(xr: DataArray, crs_in: str, crs_out: str) -> DataArray:
     transformer = Transformer.from_crs(crs_in, crs_out)
     lat, lon = transformer.transform(x_2d, y_2d)
     newcoords = {}
-    newcoords["lat"] = (["y", "x"], lat)
-    newcoords["lon"] = (["y", "x"], lon)
-    xr_new = DataArray(b, dims=["y", "x"], coords=newcoords, attrs=attrs)
+    newcoords["y"] = (["x", "y"], lat)
+    newcoords["x"] = (["x", "y"], lon)
+    xr_new = DataArray(b, dims=["x", "y"], coords=newcoords, attrs=attrs)
     return xr_new
 
 
@@ -55,3 +57,17 @@ def save_fig(figName, **kwargs):
 
 def checkdir(dirstr):
     Path(dirstr).mkdir(parents=True, exist_ok=True)
+
+
+def create_gdf_from_coords(
+    coords: list[float],
+    crs: str = "EPSG:4326",
+    to_shapefile: bool = False,
+    fname: str = "polygon.shp",
+) -> gpd.GeoDataFrame:
+    """Coords should be [[lon, lat], ...]."""
+    polygon_geom = Polygon(coords)
+    polygon = gpd.GeoDataFrame(index=[0], crs=crs, geometry=[polygon_geom])
+    if to_shapefile:
+        polygon.to_file(filename=fname, driver="ESRI Shapefile")
+    return polygon

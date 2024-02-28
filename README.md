@@ -1,5 +1,7 @@
 # sarhelper
 
+For creating pipelines for SAR data processing. Working currently with GEE, SNAPPy
+
 ## installation
 
 Download and cd into repository and then:
@@ -8,15 +10,22 @@ Download and cd into repository and then:
 python -m venv .venv
 source venv/bin/activate
 python -m pip install -e .
-pre-commit install
 ```
+To install snappy, need to first download the GUI. Look for docs on how to install snappy with python executable.
 
-## process some data
+## usage
+
+The main entry point `src/proc.py` can be run using
 
 ```
 proc
 ```
+then change parameters from command line
+
+```
+proc dataset=gees1_rp
+```
 
 ## add a new dataset
 
-use `rcm_geotiff_tp.yaml` and `datamodules/rcm_geotiff_tp.py` as templates
+See `gees1_rp.yaml` and `datamodules/gee.py` as examples.

@@ -8,12 +8,13 @@ import rioxarray as rx
 from omegaconf import DictConfig
 
 from datamodules.base import Datamod, Product
-from datamodules.utils import crs_transform, lin_to_db, save_fig
+from datamodules.utils import create_gdf_from_coords, crs_transform, lin_to_db, save_fig
 
 
 class RCMGeotiffTP(Datamod):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
+        self.lims_for_plotting = cfg.lims_for_plotting
 
     def read_file(self, file: str, to_latlon: bool = True) -> Any:
         prod = Product()
@@ -44,7 +45,7 @@ class RCMGeotiffTP(Datamod):
             # convert to latlon
             if to_latlon:
                 rxt = crs_transform(rxt, "EPSG:2960", "EPSG:4326")
-            prod.bands[bname] = rxt
+            prod.bands[bname] = rxt.rio.write_crs("EPSG:4326")
 
         return prod
 
@@ -87,4 +88,16 @@ class RCMGeotiffTP(Datamod):
         xds = rioxarray.open_rasterio(...)
         clipped = xds.rio.clip(geodf.geometry.values, geodf.crs)
         """
-        pass
+        geodf = create_gdf_from_coords(self.aoi, crs="EPSG:4326")
+        blen = len(prod.bands)
+        bname = [bn for bn in prod.bands]
+        for i in range(blen):
+            band = prod.bands[bname[i]]
+            try:
+                band = band.rio.clip(geodf.geometry.values, geodf.crs)
+            except Exception as e:
+                print(e)
+                exit()
+                continue
+            print("success?")
+            exit()

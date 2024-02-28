@@ -1,21 +1,10 @@
 defaults:
+  - dataset: gees1_rp
   - _self_
-  - dataset: rcm_geotiff_tp
 
-pipeline:
-  subset: False
-  plot: True
-  save: False
-
+# ONLY PUT OTHER STUFF HERE IF YOU WANT TO OVERRRIDE IT
 dataset:
-  dir:
-  files:
-  ext: ""
-  aoi:
   cwd: ${hydra:runtime.cwd}
-  datasets_path: ${cwd}/datasets/
+  datasets_path: ${dataset.cwd}/datasets/
   dataset_name: ${hydra:runtime.choices.dataset}
-  outdir: ${cwd}/outputs/${dataset_name}/
-
-dataset_inst:
-  _target_: ${dataset.module}
+  outdir: ${dataset.cwd}/outputs/${dataset.dataset_name}/
