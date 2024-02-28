@@ -5,7 +5,7 @@ sdt: 2022-03-14
 edt: 2022-07-01
 stn_coords: [-111.580082, 58.90969417]
 do_avg: False
-plot_type: plt
+plot_type: folium
 plot_band: VV
 aoi_refl: [
   [

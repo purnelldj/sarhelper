@@ -2,12 +2,7 @@ defaults:
   - dataset: gees1_rp
   - _self_
 
-pipeline:
-  subset: False
-  plot: True
-  save: False
-
-# ONLY PUT OTHER STUFF HERE IF YOU WANT TO OVERRRIDE IT THANK YOU
+# ONLY PUT OTHER STUFF HERE IF YOU WANT TO OVERRRIDE IT
 dataset:
   cwd: ${hydra:runtime.cwd}
   datasets_path: ${dataset.cwd}/datasets/

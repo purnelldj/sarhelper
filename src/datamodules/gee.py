@@ -30,23 +30,7 @@ class GEEProdS1(Product):
         str_meta = Path(file).name.split("_")
         self.sat = str_meta[0]
         self.mode = str_meta[1]
-        # just saving single image instead
         self.img = img
-        """
-        # this is all probably shite
-        # now adding longitude and latitude..
-        # need to do it separately for each band..
-        self.imgs = {}
-        for band in self.bands:
-            self.imgs[band] = img.select(band)
-            self.imgs[band] = self.imgs[band].addBands(ee.Image.pixelLonLat())
-            timg = self.imgs[band]
-            for band in timg.bandNames().getInfo():
-                ttimg = timg.select(band)
-                tproj = ttimg.projection().getInfo()
-                print(band, tproj)
-            exit()
-        """
 
     def get_proj(self, img: ee.Image) -> ee.Image:
         return img.projection()
@@ -116,7 +100,6 @@ class GEEDMS1(Datamod):
                     reducer=ee.Reducer.count(), geometry=self.aoi_ee
                 ).getInfo()
                 print(f"num pixels: {num_pixels}")
-                # prod.img = prod.img.clip(self.aoi_ee)
                 feat = (
                     imgll.unmask(0)
                     .setDefaultProjection(proj)
@@ -137,10 +120,7 @@ class GEEDMS1(Datamod):
             feat = prod.feats[plot_band]
             tband = prod.get_band(feat, plot_band)
             plt.rcParams.update({"font.family": "Times New Roman", "font.size": 7})
-            fig, ax = plt.subplots(figsize=[2, 1.5])
-            plt.subplots_adjust(
-                left=0.07, bottom=0.07, right=0.93, top=0.93, wspace=0.015, hspace=0.01
-            )
+            _, ax = plt.subplots(figsize=[2, 1.5])
             im = ax.imshow(tband, vmin=-30, vmax=-5, cmap="pink", origin="upper")
             if stn_coords[0] is not None:
                 tlon = prod.get_band(feat, "longitude")
@@ -189,5 +169,8 @@ class GEEDMS1(Datamod):
             Map.add_ee_layer(prod.img.select(plot_band), vis_params, "test_image")
             Map.add_child(folium.LayerControl())
             # Display the map.
-            Map.save("map.html")
-            webbrowser.open("map.html")
+            figt = self.outdir + prod.datetime.strftime(
+                prod.sat + "_%Y%m%d_%H%M%S.html"
+            )
+            Map.save(figt)
+            webbrowser.open(figt)
