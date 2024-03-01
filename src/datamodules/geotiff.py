@@ -1,30 +1,26 @@
 import os
 from datetime import datetime as dt
-from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import rioxarray as rx
-from omegaconf import DictConfig
 
 from datamodules.base import Datamod, Product
 from datamodules.utils import create_gdf_from_coords, crs_transform, lin_to_db, save_fig
 
 
-class RCMGeotiffTP(Datamod):
-    def __init__(self, cfg: DictConfig) -> None:
-        super().__init__(cfg)
-        self.lims_for_plotting = cfg.lims_for_plotting
-
-    def read_file(self, file: str, to_latlon: bool = True) -> Any:
-        prod = Product()
-
+class RCMProd(Product):
+    def __init__(self, file: str, to_latlon: bool = False, **kwargs) -> None:
+        super().__init__(**kwargs)
         # get metadata
         metastr = os.path.split(file)[1].split("_")
-        dtjoined = metastr[5] + metastr[6]
-        prod.datetime = dt.strptime(dtjoined, "%Y%m%d%H%M%S")
-        prod.sat = metastr[0]
-        prod.mode = metastr[4]
+        try:
+            self.datetime = dt.strptime(metastr[4] + metastr[5], "%Y%m%d%H%M%S")
+            self.sat = metastr[0]
+            self.mode = metastr[3]
+        except Exception as e:
+            print(e)
+            raise Exception("probably need to change indexes to metadata in filename")
 
         # get bands
         dir = file + "/"
@@ -39,25 +35,39 @@ class RCMGeotiffTP(Datamod):
             rxt = rxt.squeeze(drop=True)
 
             # convert to db
-            if bname == "VV" or bname == "VH":
-                rxt.values = lin_to_db(rxt.values)
+            rxt.values = lin_to_db(rxt.values)
 
             # convert to latlon
             if to_latlon:
                 rxt = crs_transform(rxt, "EPSG:2960", "EPSG:4326")
-            prod.bands[bname] = rxt.rio.write_crs("EPSG:4326")
 
-        return prod
+            # check crs using: rxt.spatial_ref
+            rxt = rxt.rio.write_crs("EPSG:4326")
 
-    def plot(self, prod: Product) -> None:
+            self.bands[bname] = rxt
+
+    def get_band(self, bname: str) -> np.array:
+        return self.bands[bname]
+
+    def get_lonlat(self):
+        pass
+
+
+class RCMDM(Datamod):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+    def read_file(self, file: str, to_latlon: bool = True) -> RCMProd:
+        return RCMProd(file)
+
+    def plot(self, prod: RCMProd, **kwargs) -> None:
         blen = len(prod.bands)
         bname = [bn for bn in prod.bands]
         plt.rcParams.update({"font.family": "Times New Roman", "font.size": 7})
         plt.subplots_adjust(
             left=0.07, bottom=0.07, right=0.93, top=0.93, wspace=0.015, hspace=0.01
         )
-        # plt.figure(figsize=(15, 3))
-        _, ax = plt.subplots(1, blen, figsize=[14, 3])
+        _, ax = plt.subplots(1, blen, figsize=[blen * 4.5, 3])
         for i in range(blen):
             band = prod.bands[bname[i]]
             tscale = self.lims_for_plotting[bname[i]]
@@ -75,8 +85,9 @@ class RCMGeotiffTP(Datamod):
         figt = self.outdir + prod.datetime.strftime(prod.sat + "_%Y%m%d_%H%M%S.png")
         save_fig(figt)
         plt.close()
+        print(f"saved plot to: {figt} \n \n")
 
-    def subset(self, prod: Product) -> Product:
+    def subset(self, prod: RCMProd, **kwargs) -> RCMProd:
         """
         Something like this.
 
@@ -96,8 +107,6 @@ class RCMGeotiffTP(Datamod):
             try:
                 band = band.rio.clip(geodf.geometry.values, geodf.crs)
             except Exception as e:
-                print(e)
-                exit()
-                continue
-            print("success?")
-            exit()
+                raise e
+            prod.bands[bname[i]] = band
+        return prod

@@ -8,7 +8,7 @@ class Product:
         self.datetime = None
         self.sat = None
         self.mode = None
-        self.bands = []
+        self.bands = {}
 
     def get_band(self, bname: str):
         """Get band data."""
@@ -21,7 +21,7 @@ class Datamod:
         dir: str = None,
         outdir: str = None,
         files: list[str] = None,
-        ext: str = None,
+        ext: str = "",
         sdt: str = None,
         edt: str = None,
         aoi: str = None,

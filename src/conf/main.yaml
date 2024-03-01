@@ -1,5 +1,5 @@
 defaults:
-  - dataset: gees1_rp
+  - dataset: rcm_geotiff_chaud
   - _self_
 
 # ONLY PUT OTHER STUFF HERE IF YOU WANT TO OVERRRIDE IT
