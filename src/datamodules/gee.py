@@ -24,12 +24,13 @@ class GEEProdS1(Product):
     def __init__(self, file: str, **kwargs) -> None:
         super().__init__(**kwargs)
         img = ee.Image(file)
-        self.datetime = ee2pydt(img.date())
+        self.metadict["datetime"] = ee2pydt(img.date())
+        # self.datetime = ee2pydt(img.date())
         self.bands = img.bandNames().getInfo()
         self.metadata = img.getInfo()
         str_meta = Path(file).name.split("_")
-        self.sat = str_meta[0]
-        self.mode = str_meta[1]
+        self.metadict["sat"] = str_meta[0]
+        self.metadict["mode"] = str_meta[1]
         self.img = img
 
     def get_proj(self, img: ee.Image) -> ee.Image:
@@ -148,7 +149,9 @@ class GEEDMS1(Datamod):
             cblabel = f"{plot_band} backscatter (dB)"
             plt.colorbar(im, cmap="RdBu", fraction=0.039, pad=0.04, label=cblabel)
             # ax.set_title(band)
-            figt = self.outdir + prod.datetime.strftime(prod.sat + "_%Y%m%d_%H%M%S.png")
+            figt = self.outdir + prod.metadict["datetime"].strftime(
+                prod.metadict["sat"] + "_%Y%m%d_%H%M%S.png"
+            )
             save_fig(figt)
             print(f"saved image to: {figt}")
             plt.close()
@@ -169,8 +172,8 @@ class GEEDMS1(Datamod):
             Map.add_ee_layer(prod.img.select(plot_band), vis_params, "test_image")
             Map.add_child(folium.LayerControl())
             # Display the map.
-            figt = self.outdir + prod.datetime.strftime(
-                prod.sat + "_%Y%m%d_%H%M%S.html"
+            figt = self.outdir + prod.metadict["datetime"].strftime(
+                prod.metadict["sat"] + "_%Y%m%d_%H%M%S.html"
             )
             Map.save(figt)
             webbrowser.open(figt)

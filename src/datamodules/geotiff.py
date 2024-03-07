@@ -1,9 +1,11 @@
 import os
+import pickle
 from datetime import datetime as dt
 
 import matplotlib.pyplot as plt
 import numpy as np
 import rioxarray as rx
+from matplotlib.dates import DateFormatter, date2num
 
 from datamodules.base import Datamod, Product
 from datamodules.utils import create_gdf_from_coords, crs_transform, lin_to_db, save_fig
@@ -15,9 +17,11 @@ class RCMProd(Product):
         # get metadata
         metastr = os.path.split(file)[1].split("_")
         try:
-            self.datetime = dt.strptime(metastr[4] + metastr[5], "%Y%m%d%H%M%S")
-            self.sat = metastr[0]
-            self.mode = metastr[3]
+            self.metadict["datetime"] = dt.strptime(
+                metastr[4] + metastr[5], "%Y%m%d%H%M%S"
+            )
+            self.metadict["sat"] = metastr[0]
+            self.metadict["mode"] = metastr[3]
         except Exception as e:
             print(e)
             raise Exception("probably need to change indexes to metadata in filename")
@@ -82,7 +86,9 @@ class RCMDM(Datamod):
                 origin="upper",
             )
             ax[i].set_title(bname[i])
-        figt = self.outdir + prod.datetime.strftime(prod.sat + "_%Y%m%d_%H%M%S.png")
+        figt = self.outdir + prod.metadict["datetime"].strftime(
+            prod.metadict["sat"] + "_%Y%m%d_%H%M%S.png"
+        )
         save_fig(figt)
         plt.close()
         print(f"saved plot to: {figt} \n \n")
@@ -110,3 +116,43 @@ class RCMDM(Datamod):
                 raise e
             prod.bands[bname[i]] = band
         return prod
+
+    def timeseries(
+        self, prods: list[Product], avg_values: bool = True, **kwargs
+    ) -> None:
+        timeseriesdict = {}
+        metas = prods[0].metalist
+        bands = [band for band in prods[0].bands]
+        for meta in metas:
+            timeseriesdict[meta] = []
+        for band in bands:
+            timeseriesdict[band] = []
+        for prod in prods:
+            for meta in metas:
+                timeseriesdict[meta].append(prod.metadict[meta])
+            for band in bands:
+                bdata = prod.bands[band].values
+                if avg_values:
+                    bdata = np.nanmedian(bdata)
+                timeseriesdict[band].append(bdata)
+
+        dn = date2num(timeseriesdict["datetime"])
+        plt.rcParams.update({"font.family": "Times New Roman", "font.size": 7})
+        _, ax = plt.subplots(len(bands), 1, figsize=(4, 2.5 * len(bands)))
+        plt.subplots_adjust(
+            left=0.07, bottom=0.07, right=0.93, top=0.93, wspace=0.01, hspace=0.3
+        )
+        dformat = DateFormatter("%y-%m-%d")
+        for i, band in enumerate(bands):
+            ax[i].plot_date(dn, timeseriesdict[band])
+            ax[i].set_title(band)
+            ax[i].xaxis.set_major_formatter(dformat)
+        figt = self.outdir + "timeseries.png"
+        save_fig(figt)
+        plt.close()
+        print(f"saved plot to: {figt} \n \n")
+
+        savepkl = self.outdir + "timeseries.pkl"
+        with open(savepkl, "wb") as f:
+            pickle.dump(timeseriesdict, f)
+        print(f"saved time series data to: {savepkl}")

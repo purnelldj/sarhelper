@@ -12,15 +12,18 @@ def main(cfg: DictConfig):
     datamod: Datamod = instantiate(cfg.dataset)
     print("instantiated datamodule")
 
+    try:
+        pipeline = cfg.dataset.pipeline
+    except ConfigAttributeError:
+        raise Exception("pipeline is missing from config file")
+
+    if "timeseries" in pipeline:
+        prods = []
+
     # run processing steps
     for file in datamod.filelist:
         print(f"processing file: \n {file}")
         prod: Product = datamod.read_file(file)
-
-        try:
-            pipeline = cfg.dataset.pipeline
-        except ConfigAttributeError:
-            raise Exception("pipeline is missing from config file")
 
         for ind, action in enumerate(pipeline):
             print(f"\n action ({ind+1}/{len(pipeline)}): {action} \n")
@@ -34,6 +37,15 @@ def main(cfg: DictConfig):
 
             if action == "save":
                 datamod.save(prod, **cfg.dataset)
+
+            if action == "timeseries":
+                prods.append(prod)
+
+    # now collecting data in timeseries
+    if "timeseries" in pipeline:
+        print("collecting time series to save")
+
+        datamod.timeseries(prods)
 
     print(f"finished processing {len(datamod.filelist)} files")
 

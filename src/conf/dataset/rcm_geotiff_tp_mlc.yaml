@@ -1,11 +1,11 @@
 _target_: datamodules.geotiff.RCMDM
-pipeline: ["subset", "timeseries"]
+pipeline: ["subset", "plot"]
 
 # if files are local
 dir: ${dataset.datasets_path}rcm_geotiff_chaud/
 
-sdt: 2023-02-01
-edt: 2023-05-01
+sdt: 2023-03-28
+edt: 2023-07-10
 do_avg: False
 plot_band: HH
 stn_coords:
@@ -13,7 +13,7 @@ lims_for_plotting:
   HH: [-40, 0]
   HV: [-40, 0]
   iae: [18, 60]
-aoi: [
+aoi_large: [
   [-70.6900652030602, 46.12668677574442],
   [-70.69005794749033, 46.12670431236771],
   [-70.69005428401985, 46.126722378169944],
@@ -33,7 +33,7 @@ aoi: [
   [-70.68915243828799, 46.12645651966716],
   [-70.6900652030602, 46.12668677574442]
   ]
-aoi_large: [
+aoi: [
   [-70.69298013889733, 46.12521425883397],
   [-70.68636569162769, 46.12531135159176],
   [-70.68648413784004, 46.12858096319552],

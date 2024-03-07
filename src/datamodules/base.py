@@ -5,9 +5,10 @@ from datamodules.utils import checkdir, get_filelist
 
 class Product:
     def __init__(self, **kwargs) -> None:
-        self.datetime = None
-        self.sat = None
-        self.mode = None
+        self.metalist = ["datetime", "sat", "mode"]
+        self.metadict = {}
+        for meta in self.metalist:
+            self.metadict[meta] = None
         self.bands = {}
 
     def get_band(self, bname: str):
