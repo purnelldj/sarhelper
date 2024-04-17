@@ -26,6 +26,7 @@ class Datamod:
         sdt: str = None,
         edt: str = None,
         aoi: str = None,
+        aoi_crs: str = "EPSG:4326",
         lims_for_plotting: dict = None,
         **kwargs,
     ) -> None:
@@ -33,6 +34,7 @@ class Datamod:
             self.filelist = get_filelist(dir, files, ext)
             print(f"number of files: {len(self.filelist)}")
         self.aoi = OmegaConf.to_container(aoi)
+        self.aoi_crs = aoi_crs
         self.outdir = outdir
         self.lims_for_plotting = lims_for_plotting
         self.sdt = sdt

@@ -6,6 +6,12 @@ dir: ${dataset.datasets_path}rcm_geotiff_chaud/
 
 sdt: 2023-02-01
 edt: 2023-05-01
+meta_map: {
+  "date": 4,
+  "time": 5,
+  "sat": 0,
+  "mode": 3
+}
 do_avg: False
 plot_band: HH
 stn_coords:

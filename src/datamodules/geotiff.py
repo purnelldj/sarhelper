@@ -6,47 +6,70 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rioxarray as rx
 from matplotlib.dates import DateFormatter, date2num
+from rioxarray.exceptions import NoDataInBounds
 
 from datamodules.base import Datamod, Product
-from datamodules.utils import create_gdf_from_coords, crs_transform, lin_to_db, save_fig
+from datamodules.utils import create_gdf_from_coords, lin_to_db, save_fig
 
 
 class RCMProd(Product):
-    def __init__(self, file: str, to_latlon: bool = False, **kwargs) -> None:
+    def __init__(
+        self,
+        file: str,
+        meta_map: dict = None,
+        subdir: str = "",
+        conv_to_db: bool = True,
+        crs: str = "EPSG:4326",
+        bands_use: list[str] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
+        if meta_map is None:
+            raise Exception("need to provide meta_map")
         # get metadata
         metastr = os.path.split(file)[1].split("_")
         try:
             self.metadict["datetime"] = dt.strptime(
-                metastr[4] + metastr[5], "%Y%m%d%H%M%S"
+                metastr[meta_map["date"]] + metastr[meta_map["time"]], "%Y%m%d%H%M%S"
             )
-            self.metadict["sat"] = metastr[0]
-            self.metadict["mode"] = metastr[3]
+            self.metadict["sat"] = metastr[meta_map["sat"]]
+            self.metadict["mode"] = metastr[meta_map["mode"]]
         except Exception as e:
             print(e)
             raise Exception("probably need to change indexes to metadata in filename")
 
         # get bands
-        dir = file + "/"
+        dir = file + "/" + subdir
         sublist = os.listdir(dir)
         sublist = [file for file in sublist if file[-4:] == ".tif"]
         for file in sublist:
             full_file = dir + file
+            file = file.split(".")[0]  # remove ext
             filemeta = file.split("_")
-            bname = filemeta[6]
+            # bname = filemeta[meta_map["band"]]
+            bname = ""
+            for i in range(meta_map["band"], len(filemeta)):
+                if filemeta[i] in ["orf", "cs", "c2d", "fenhlee"]:
+                    continue
+                if len(bname) > 0:
+                    bname += "_"
+                bname += filemeta[i]
+            if bands_use is not None and bname not in bands_use:
+                continue
             rxt = rx.open_rasterio(full_file)
             rxt.values[rxt.values == 0] = np.nan
             rxt = rxt.squeeze(drop=True)
 
             # convert to db
-            rxt.values = lin_to_db(rxt.values)
-
-            # convert to latlon
-            if to_latlon:
-                rxt = crs_transform(rxt, "EPSG:2960", "EPSG:4326")
+            if bname in ["HH", "HV", "CH", "CV"] and conv_to_db:
+                rxt.values = lin_to_db(rxt.values)
+            print(f"min / max / mean for band {bname}:")
+            print(
+                f"{np.nanmin(rxt.values):.1f}, {np.nanmax(rxt.values):.1f}, {np.nanmean(rxt.values):.1f}"
+            )
 
             # check crs using: rxt.spatial_ref
-            rxt = rxt.rio.write_crs("EPSG:4326")
+            rxt = rxt.rio.write_crs(crs)
 
             self.bands[bname] = rxt
 
@@ -60,9 +83,13 @@ class RCMProd(Product):
 class RCMDM(Datamod):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+        self.prod_kwargs = kwargs
+        # self.meta_map = meta_map
+        # self.subdir = subdir
 
     def read_file(self, file: str, to_latlon: bool = True) -> RCMProd:
-        return RCMProd(file)
+        # return RCMProd(file, self.meta_map, subdir=self.subdir)
+        return RCMProd(file, **self.prod_kwargs)
 
     def plot(self, prod: RCMProd, **kwargs) -> None:
         blen = len(prod.bands)
@@ -74,6 +101,9 @@ class RCMDM(Datamod):
         _, ax = plt.subplots(1, blen, figsize=[blen * 4.5, 3])
         for i in range(blen):
             band = prod.bands[bname[i]]
+            if bname[i] not in self.lims_for_plotting:
+                print(f"need to provide plot limits for var: {bname[i]}")
+                continue
             tscale = self.lims_for_plotting[bname[i]]
             cbkw = {}
             cbkw["label"] = None
@@ -105,15 +135,16 @@ class RCMDM(Datamod):
         xds = rioxarray.open_rasterio(...)
         clipped = xds.rio.clip(geodf.geometry.values, geodf.crs)
         """
-        geodf = create_gdf_from_coords(self.aoi, crs="EPSG:4326")
+        geodf = create_gdf_from_coords(self.aoi, crs=self.aoi_crs)
         blen = len(prod.bands)
         bname = [bn for bn in prod.bands]
         for i in range(blen):
             band = prod.bands[bname[i]]
             try:
                 band = band.rio.clip(geodf.geometry.values, geodf.crs)
-            except Exception as e:
-                raise e
+            except NoDataInBounds:
+                print("No data in bounds")
+                return None
             prod.bands[bname[i]] = band
         return prod
 

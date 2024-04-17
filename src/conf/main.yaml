@@ -1,5 +1,5 @@
 defaults:
-  - dataset: rcm_geotiff_chaud
+  - dataset: rcm_geotiff_qcio_vq
   - _self_
 
 # ONLY PUT OTHER STUFF HERE IF YOU WANT TO OVERRRIDE IT

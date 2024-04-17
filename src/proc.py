@@ -23,13 +23,20 @@ def main(cfg: DictConfig):
     # run processing steps
     for file in datamod.filelist:
         print(f"processing file: \n {file}")
-        prod: Product = datamod.read_file(file)
+        try:
+            prod: Product = datamod.read_file(file)
+        except Exception as e:
+            print(e)
+            print("issue with file - skipping...")
 
         for ind, action in enumerate(pipeline):
             print(f"\n action ({ind+1}/{len(pipeline)}): {action} \n")
 
             if action == "subset":
                 prod = datamod.subset(prod, **cfg.dataset)
+                if prod is None:
+                    print("skipping file")
+                    break
                 print("successfully obtained subset")
 
             if action == "plot":
