@@ -21,6 +21,7 @@ class Datamod:
         self,
         dir: str = None,
         outdir: str = None,
+        savedir: str = None,
         files: list[str] = None,
         ext: str = "",
         sdt: str = None,
@@ -30,6 +31,7 @@ class Datamod:
         lims_for_plotting: dict = None,
         **kwargs,
     ) -> None:
+        self.savedir = savedir
         if dir is not None:
             self.filelist = get_filelist(dir, files, ext)
             print(f"number of files: {len(self.filelist)}")

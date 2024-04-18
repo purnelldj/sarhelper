@@ -1,6 +1,7 @@
 import os
 import pickle
 from datetime import datetime as dt
+from math import ceil
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +10,14 @@ from matplotlib.dates import DateFormatter, date2num
 from rioxarray.exceptions import NoDataInBounds
 
 from datamodules.base import Datamod, Product
-from datamodules.utils import create_gdf_from_coords, lin_to_db, save_fig
+from datamodules.utils import (
+    checkdir,
+    create_gdf_from_coords,
+    lin_to_db,
+    pload,
+    psave,
+    save_fig,
+)
 
 
 class RCMProd(Product):
@@ -27,6 +35,7 @@ class RCMProd(Product):
         if meta_map is None:
             raise Exception("need to provide meta_map")
         # get metadata
+        self.file = os.path.basename(file)
         metastr = os.path.split(file)[1].split("_")
         try:
             self.metadict["datetime"] = dt.strptime(
@@ -49,7 +58,15 @@ class RCMProd(Product):
             # bname = filemeta[meta_map["band"]]
             bname = ""
             for i in range(meta_map["band"], len(filemeta)):
-                if filemeta[i] in ["orf", "cs", "c2d", "fenhlee"]:
+                if filemeta[i] in [
+                    "orf",
+                    "cs",
+                    "c2d",
+                    "fenhlee",
+                    "cp2rrrl",
+                    "poldiscr",
+                    "txC",
+                ]:
                     continue
                 if len(bname) > 0:
                     bname += "_"
@@ -61,7 +78,22 @@ class RCMProd(Product):
             rxt = rxt.squeeze(drop=True)
 
             # convert to db
-            if bname in ["HH", "HV", "CH", "CV"] and conv_to_db:
+            db_set = [
+                "HH",
+                "HV",
+                "CH",
+                "CV",
+                "RLd",
+                "RRd",
+                "mchi_dbl",
+                "mchi_surf",
+                "mchi_vol",
+                "s0",
+                "s1",
+                "s2",
+                "s3",
+            ]
+            if bname in db_set and conv_to_db:
                 rxt.values = lin_to_db(rxt.values)
             print(f"min / max / mean for band {bname}:")
             print(
@@ -88,23 +120,39 @@ class RCMDM(Datamod):
         # self.subdir = subdir
 
     def read_file(self, file: str, to_latlon: bool = True) -> RCMProd:
-        # return RCMProd(file, self.meta_map, subdir=self.subdir)
-        return RCMProd(file, **self.prod_kwargs)
+        if file[-4:] != ".pkl":
+            return RCMProd(file, **self.prod_kwargs)
+        else:
+            return pload(file)
 
     def plot(self, prod: RCMProd, **kwargs) -> None:
         blen = len(prod.bands)
+        if "XC" in prod.bands:
+            blen -= 1
         bname = [bn for bn in prod.bands]
         plt.rcParams.update({"font.family": "Times New Roman", "font.size": 7})
-        plt.subplots_adjust(
-            left=0.07, bottom=0.07, right=0.93, top=0.93, wspace=0.015, hspace=0.01
-        )
-        _, ax = plt.subplots(1, blen, figsize=[blen * 4.5, 3])
+        cols = 4
+        rows = ceil(blen / cols)
+        plt.figure(figsize=[cols * 3, rows * 2.3])
+        # _, ax = plt.subplots(rows, cols, figsize=[cols * 4.5, rows * 3])
+        rowt = 0
+        colt = -1
+        ax = {}
         for i in range(blen):
+            colt += 1
+            if colt > cols - 1:
+                colt = 0
+                rowt += 1
+            ax[i] = plt.subplot(rows, cols, i + 1)
             band = prod.bands[bname[i]]
-            if bname[i] not in self.lims_for_plotting:
-                print(f"need to provide plot limits for var: {bname[i]}")
+            if bname[i] == "XC":
                 continue
-            tscale = self.lims_for_plotting[bname[i]]
+            if bname[i] not in self.lims_for_plotting:
+                # print(f"need to provide plot limits for var: {bname[i]}")
+                # continue
+                tscale = [None, None]
+            else:
+                tscale = self.lims_for_plotting[bname[i]]
             cbkw = {}
             cbkw["label"] = None
             band.plot.imshow(
@@ -115,7 +163,12 @@ class RCMDM(Datamod):
                 cbar_kwargs=cbkw,
                 origin="upper",
             )
+            ax[i].set_xlabel(None)
+            ax[i].set_ylabel(None)
             ax[i].set_title(bname[i])
+        plt.subplots_adjust(
+            left=0.07, bottom=0.07, right=0.93, top=0.93, wspace=0.2, hspace=0.25
+        )
         figt = self.outdir + prod.metadict["datetime"].strftime(
             prod.metadict["sat"] + "_%Y%m%d_%H%M%S.png"
         )
@@ -124,17 +177,6 @@ class RCMDM(Datamod):
         print(f"saved plot to: {figt} \n \n")
 
     def subset(self, prod: RCMProd, **kwargs) -> RCMProd:
-        """
-        Something like this.
-
-        code:
-        import rioxarray
-        import geopandas
-
-        geodf = geopandas.read_file(...)
-        xds = rioxarray.open_rasterio(...)
-        clipped = xds.rio.clip(geodf.geometry.values, geodf.crs)
-        """
         geodf = create_gdf_from_coords(self.aoi, crs=self.aoi_crs)
         blen = len(prod.bands)
         bname = [bn for bn in prod.bands]
@@ -147,6 +189,12 @@ class RCMDM(Datamod):
                 return None
             prod.bands[bname[i]] = band
         return prod
+
+    def save(self, prod: RCMProd, **kwargs) -> None:
+        checkdir(self.savedir)
+        full_path = self.savedir + prod.file + ".pkl"
+        psave(prod, full_path)
+        exit()
 
     def timeseries(
         self, prods: list[Product], avg_values: bool = True, **kwargs

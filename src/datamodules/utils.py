@@ -1,4 +1,5 @@
 import glob
+import pickle
 from pathlib import Path
 
 import geopandas as gpd
@@ -7,6 +8,19 @@ import numpy as np
 from pyproj import Transformer
 from shapely.geometry import Polygon
 from xarray import DataArray
+
+
+def psave(obj, path: str) -> None:
+    with open(path, "wb") as f:
+        pickle.dump(obj, f)
+    print(f"saved file to: {path}")
+
+
+def pload(path: str):
+    with open(path, "rb") as f:
+        obj = pickle.load(f)
+    print(f"loaded pickle file: {path}")
+    return obj
 
 
 def crs_transform(xr: DataArray, crs_in: str, crs_out: str) -> DataArray:

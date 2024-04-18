@@ -3,11 +3,17 @@ pipeline: ["subset", "plot"]
 
 # if files are local
 dir: C:/Users/dapur3/git/eodms-cli/downloads/vq_1/
-subdir: seq8_orf/
 ext: MLC
+subdir: seq8_orf/
+savedir: ${dataset.datasets_path}${dataset.dataset_name}/22m/
+
+# if loading files
+# dir: ${dataset.datasets_path}${dataset.dataset_name}/22m/
+# ext: pkl
+
 conv_to_db: True
 crs: EPSG:2960
-# bands_use: [CH, CV]
+# bands_use: [CH, CV, RLd, RRd, m]
 
 sdt: 2023-03-28
 edt: 2023-07-10
