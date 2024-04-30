@@ -5,10 +5,11 @@ from datamodules.utils import checkdir, get_filelist
 
 class Product:
     def __init__(self, **kwargs) -> None:
-        self.datetime = None
-        self.sat = None
-        self.mode = None
-        self.bands = []
+        self.metalist = ["datetime", "sat", "mode"]
+        self.metadict = {}
+        for meta in self.metalist:
+            self.metadict[meta] = None
+        self.bands = {}
 
     def get_band(self, bname: str):
         """Get band data."""
@@ -20,18 +21,22 @@ class Datamod:
         self,
         dir: str = None,
         outdir: str = None,
+        savedir: str = None,
         files: list[str] = None,
-        ext: str = None,
+        ext: str = "",
         sdt: str = None,
         edt: str = None,
         aoi: str = None,
+        aoi_crs: str = "EPSG:4326",
         lims_for_plotting: dict = None,
         **kwargs,
     ) -> None:
+        self.savedir = savedir
         if dir is not None:
             self.filelist = get_filelist(dir, files, ext)
             print(f"number of files: {len(self.filelist)}")
         self.aoi = OmegaConf.to_container(aoi)
+        self.aoi_crs = aoi_crs
         self.outdir = outdir
         self.lims_for_plotting = lims_for_plotting
         self.sdt = sdt

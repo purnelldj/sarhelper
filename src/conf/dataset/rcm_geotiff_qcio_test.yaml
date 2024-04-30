@@ -1,0 +1,30 @@
+_target_: datamodules.geotiff.RCMDM
+pipeline: ["subset", "plot"]
+
+# if files are local
+dir: ${dataset.datasets_path}rcm_geotiff_qcio_test/
+
+sdt: 2023-03-28
+edt: 2023-07-10
+meta_map: {
+  "date": 5,
+  "time": 6,
+  "sat": 0,
+  "mode": 4,
+  "band": 6
+}
+do_avg: False
+plot_band: HH
+stn_coords:
+lims_for_plotting:
+  CH: [-40, 15]
+  CV: [-40, 15]
+  iae: [18, 60]
+  XC: [0, 150]
+aoi: [
+  [-71.3144317493865, 46.87683543547623],
+  [-71.0841905352674, 46.71025496730761],
+  [-70.60785715531831, 46.95525863255309],
+  [-70.842154634568, 7.12901767261412],
+  [-71.3144317493865,46.87683543547623]
+]

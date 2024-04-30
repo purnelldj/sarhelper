@@ -1,4 +1,5 @@
 import glob
+import pickle
 from pathlib import Path
 
 import geopandas as gpd
@@ -7,6 +8,19 @@ import numpy as np
 from pyproj import Transformer
 from shapely.geometry import Polygon
 from xarray import DataArray
+
+
+def psave(obj, path: str) -> None:
+    with open(path, "wb") as f:
+        pickle.dump(obj, f)
+    print(f"saved file to: {path}")
+
+
+def pload(path: str):
+    with open(path, "rb") as f:
+        obj = pickle.load(f)
+    print(f"loaded pickle file: {path}")
+    return obj
 
 
 def crs_transform(xr: DataArray, crs_in: str, crs_out: str) -> DataArray:
@@ -36,6 +50,8 @@ def lin_to_db(pixelData):
 
 
 def get_filelist(dir: str = None, files: list[str] = None, ext: str = "") -> list[str]:
+    if ext is None:
+        ext = ""
     if dir is None and files is None:
         raise Exception("need to provide dir or files to return file list")
     if dir is not None and files is not None:
