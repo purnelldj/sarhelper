@@ -1,14 +1,14 @@
 _target_: datamodules.geotiff.RCMDM
-pipeline: ["subset", "plot"]
+pipeline: ["subset", "save"]
 
 # if files are local
-dir: C:/Users/dapur3/git/eodms-cli/downloads/vq_1/
+dir: C:/Users/dapur3/git/eodms-cli/downloads/vqalt_1/
 ext: MLC
 subdir: seq8_orf/
-savedir: ${dataset.datasets_path}${dataset.dataset_name}/22m/
+savedir: ${dataset.datasets_path}${dataset.dataset_name}/15m/
 
 # if loading files
-# dir: ${dataset.datasets_path}${dataset.dataset_name}/22m/
+# dir: ${dataset.datasets_path}${dataset.dataset_name}/15m/
 # ext: pkl
 
 conv_to_db: True
